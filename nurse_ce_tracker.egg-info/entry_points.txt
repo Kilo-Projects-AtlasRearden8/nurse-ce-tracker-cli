@@ -1,0 +1,2 @@
+[console_scripts]
+nurse-ce-tracker = nurse_ce_tracker.__main__:main

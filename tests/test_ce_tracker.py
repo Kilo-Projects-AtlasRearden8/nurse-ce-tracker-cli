@@ -102,8 +102,10 @@ class TestDateMath:
             renewal_cycle_years=2,
             required_hours=30.0
         )
+        # Base date is after the 2026 renewal, so next deadline is 2028-01-01
         days = days_until_renewal(license_info, date(2026, 6, 15))
-        assert days < 0
+        assert days > 0
+        assert days == (date(2028, 1, 1) - date(2026, 6, 15)).days
 
 
 class TestCEEntry:

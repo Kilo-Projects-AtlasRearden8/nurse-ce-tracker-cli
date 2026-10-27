@@ -152,13 +152,22 @@ def calculate_renewal_deadline(license_info: LicenseInfo, from_date: Optional[da
     """Calculate the next renewal deadline from a given date."""
     base = from_date or date.today()
     renewal = datetime.strptime(license_info.renewal_date, "%Y-%m-%d").date()
-    
-    # If renewal date has passed this year, next renewal is next cycle
-    if renewal < base:
-        years_ahead = ((base.year - renewal.year) // license_info.renewal_cycle_years + 1) * license_info.renewal_cycle_years
-        renewal = renewal.replace(year=renewal.year + years_ahead)
-    
-    return renewal
+    cycle_years = license_info.renewal_cycle_years
+
+    if base <= renewal:
+        return renewal
+
+    # Find smallest n such that renewal + n * cycle_years >= base
+    years_diff = base.year - renewal.year
+    n = max(0, (years_diff + cycle_years - 1) // cycle_years)
+
+    candidate = renewal.replace(year=renewal.year + n * cycle_years)
+
+    # Adjust if candidate falls before base due to month/day differences
+    while candidate < base:
+        candidate = candidate.replace(year=candidate.year + cycle_years)
+
+    return candidate
 
 
 def days_until_renewal(license_info: LicenseInfo, from_date: Optional[date] = None) -> int:
@@ -190,7 +199,7 @@ def cmd_add(args: argparse.Namespace, store: CEStore) -> int:
     """Add a new CE entry."""
     entry = CEEntry(
         id=generate_id(),
-        date=args.date,
+        date=args.date.isoformat(),
         title=args.title,
         provider=args.provider,
         hours=args.hours,
